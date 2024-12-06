@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-// Eine Hilfsfunktion, um das Token aus den Cookies zu extrahieren
-const getTokenFromCookies = (req: NextRequest): string | null => {
-    const cookie = req.cookies.get('authToken');
-    return cookie ? cookie.value : null; // .value hier hinzufügen, um den Cookie-Wert zu extrahieren
-};
+// Hilfsfunktion zum Extrahieren des Tokens aus den Cookies
+function getTokenFromCookies(req: NextRequest): string | null {
+    return req.cookies.get('authToken')?.value || null;
+}
 
-// Eine Hilfsfunktion, um die Anzahl der fehlgeschlagenen Versuche zu bekommen
-const getFailedAttempts = (req: NextRequest): number => {
-    const attempts = req.cookies.get('failedAttempts');
-    return attempts ? parseInt(attempts.value, 10) : 0; // .value hier hinzufügen, um den Wert des Cookies zu extrahieren
-};
+// Hilfsfunktion zum Abrufen der fehlgeschlagenen Anmeldeversuche
+function getFailedAttempts(req: NextRequest): number {
+    const failedAttempts = req.cookies.get('failedAttempts')?.value;
+    return failedAttempts ? parseInt(failedAttempts) : 0;
+}
 
 // Middleware, um das Token zu validieren und Lock-out zu handhaben
 export function middleware(req: NextRequest) {
@@ -19,7 +18,10 @@ export function middleware(req: NextRequest) {
     console.log('Middleware Request Path:', path);
 
     // Routen ausschließen, die nicht geprüft werden sollen
-    if (path.startsWith('/login') || path.startsWith('/api/login')) {
+    if (path.startsWith('/login') || 
+        path.startsWith('/api/login') || 
+        path.startsWith('/api/unlock') || 
+        path.startsWith('/locked')) {
         console.log('Excluding path from middleware:', path);
         return NextResponse.next();
     }
@@ -43,7 +45,23 @@ export function middleware(req: NextRequest) {
             throw new Error('JWT_SECRET is not defined in environment variables.');
         }
 
-        const decoded = jwt.verify(token, secret);
+        // Token decodieren und Benutzerrolle prüfen
+        const decoded = jwt.verify(token, secret) as { 
+            username: string;
+            role?: string;
+            isActive?: boolean;
+        };
+
+        // Prüfen, ob der Benutzer noch aktiv ist (falls das Feld existiert)
+        if (decoded.isActive === false) {
+            return NextResponse.redirect(new URL('/login', req.url));
+        }
+
+        // Admin-Routen prüfen
+        if (path.startsWith('/admin') && decoded.role !== 'admin') {
+            return NextResponse.redirect(new URL('/', req.url));
+        }
+
         console.log('Token successfully verified:', decoded);
         return NextResponse.next();
     } catch (error) {
@@ -54,7 +72,6 @@ export function middleware(req: NextRequest) {
         }
         return NextResponse.redirect(new URL('/login', req.url));
     }
-
 }
 
 // Definiere explizite Routen, die geschützt werden sollen
@@ -63,6 +80,7 @@ export const config = {
         '/app/page',         // Geschützte Homepage
         '/profil/page',      // Geschützte Profil-Seite
         '/settings/page',    // Geschützte Einstellungs-Seite
+        '/admin/(.*)',       // Admin-Bereich (nur für Administratoren)
         '/app/(.*)',         // Alle weiteren Seiten innerhalb von /app
         '/profil/(.*)',      // Alle weiteren Seiten innerhalb von /profil
         '/settings/(.*)',    // Alle weiteren Seiten innerhalb von /settings

@@ -6,9 +6,26 @@ import { LayoutGroup, motion } from 'framer-motion'
 import React, { forwardRef, useId } from 'react'
 import { TouchTarget } from './button'
 import { Link } from './link'
+import LogoutButton from './LogoutButton'
 
 export function Navbar({ className, ...props }: React.ComponentPropsWithoutRef<'nav'>) {
-  return <nav {...props} className={clsx(className, 'flex flex-1 items-center gap-4 py-2.5')} />
+  return (
+    <nav
+      {...props}
+      className={clsx(
+        className,
+        'flex flex-1 items-center gap-4 py-2.5',
+        'bg-white',
+        'shadow-sm',
+        'p-4',
+        'justify-between',
+        'items-center'
+      )}
+    >
+      <div className="font-bold text-lg">SK-Chatbot</div>
+      <LogoutButton />
+    </nav>
+  )
 }
 
 export function NavbarDivider({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
