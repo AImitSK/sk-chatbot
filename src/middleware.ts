@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
@@ -16,27 +15,46 @@ const getFailedAttempts = (req: NextRequest): number => {
 
 // Middleware, um das Token zu validieren und Lock-out zu handhaben
 export function middleware(req: NextRequest) {
+    const path = req.nextUrl.pathname;
+    console.log('Middleware Request Path:', path);
+
+    // Routen ausschließen, die nicht geprüft werden sollen
+    if (path.startsWith('/login') || path.startsWith('/api/login')) {
+        console.log('Excluding path from middleware:', path);
+        return NextResponse.next();
+    }
+
     const token = getTokenFromCookies(req);
     const failedAttempts = getFailedAttempts(req);
 
     if (failedAttempts >= 5) {
-        // Wenn der Benutzer mehr als 5 fehlgeschlagene Versuche hat, zur Lock-out-Seite umleiten
+        console.log('Redirecting to locked page due to too many failed attempts.');
         return NextResponse.redirect(new URL('/locked', req.url));
     }
 
     if (!token) {
-        // Kein Token, Benutzer wird zur Login-Seite weitergeleitet
+        console.log('No token found. Redirecting to login.');
         return NextResponse.redirect(new URL('/login', req.url));
     }
 
     try {
-        // Hier muss das geheime Schlüssel (SECRET) gesetzt werden, das beim Erstellen des Tokens verwendet wurde
-        jwt.verify(token, process.env.JWT_SECRET as string);
-        return NextResponse.next(); // Token ist gültig, Zugriff gewähren
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            throw new Error('JWT_SECRET is not defined in environment variables.');
+        }
+
+        const decoded = jwt.verify(token, secret);
+        console.log('Token successfully verified:', decoded);
+        return NextResponse.next();
     } catch (error) {
-        // Token ungültig, Benutzer wird zur Login-Seite weitergeleitet
+        if (error instanceof Error) {
+            console.error('Token verification failed:', error.message);
+        } else {
+            console.error('Unexpected error during token verification:', error);
+        }
         return NextResponse.redirect(new URL('/login', req.url));
     }
+
 }
 
 // Definiere explizite Routen, die geschützt werden sollen
@@ -47,6 +65,6 @@ export const config = {
         '/settings/page',    // Geschützte Einstellungs-Seite
         '/app/(.*)',         // Alle weiteren Seiten innerhalb von /app
         '/profil/(.*)',      // Alle weiteren Seiten innerhalb von /profil
-        '/settings/(.*)'     // Alle weiteren Seiten innerhalb von /settings
+        '/settings/(.*)',    // Alle weiteren Seiten innerhalb von /settings
     ],
 };

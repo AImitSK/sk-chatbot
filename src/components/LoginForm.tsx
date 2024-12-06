@@ -1,50 +1,22 @@
-import { useState } from 'react';
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 
-const LoginForm = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+export async function POST(req: NextRequest) {
+    const body = await req.json();
+    const { username, password } = body;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        const response = await fetch('/api/loginUser', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, password }),
+    // Dummy-Authentifizierung (durch echte Logik ersetzen)
+    if (username === 'admin' && password === 'password') {
+        const token = jwt.sign({ username }, process.env.JWT_SECRET as string, {
+            expiresIn: '1h', // Token läuft nach 1 Stunde ab
         });
 
-        const data = await response.json();
-        if (response.ok) {
-            console.log('Login successful:', data);
-            // Weiterleitung oder Anzeige von geschützten Inhalten
-        } else {
-            console.error('Login failed:', data.message);
-        }
-    };
-
-    return (
-        <form onSubmit={handleSubmit}>
-            <label htmlFor="username">Username</label>
-            <input
-                type="text"
-                id="username"
-                name="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <label htmlFor="password">Password</label>
-            <input
-                type="password"
-                id="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit">Login</button>
-        </form>
-    );
-};
-
-export default LoginForm;
+        return NextResponse.json({ token }, {
+            headers: {
+                'Set-Cookie': `authToken=${token}; Path=/; HttpOnly; Secure; SameSite=Strict;`,
+            },
+        });
+    } else {
+        return NextResponse.json({ message: 'Ungültige Anmeldedaten' }, { status: 401 });
+    }
+}
