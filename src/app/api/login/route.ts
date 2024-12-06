@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose';
 import { getUserFromSanity } from '@/sanity/queries';
 
 // Hilfsfunktion zum Abrufen der fehlgeschlagenen Anmeldeversuche
@@ -83,13 +83,15 @@ export async function POST(req: NextRequest) {
         }
 
         // Token generieren mit zusätzlichen Benutzerinformationen
-        const token = jwt.sign({
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const token = await new jose.SignJWT({
             username,
             role: user.role || 'user', // Standardrolle 'user' wenn nicht gesetzt
             isActive: user.isActive !== false // Aktiv, wenn nicht explizit deaktiviert
-        }, process.env.JWT_SECRET, {
-            expiresIn: '1h', // Token läuft nach 1 Stunde ab
-        });
+        })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime('1h')
+        .sign(secret);
 
         // Erfolgreicher Login - Failed Attempts zurücksetzen
         const response = NextResponse.json({ 
@@ -99,10 +101,14 @@ export async function POST(req: NextRequest) {
                 role: user.role || 'user',
                 email: user.email
             }
-        }, {
-            headers: {
-                'Set-Cookie': `authToken=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=3600`,
-            },
+        });
+        
+        // Auth Token setzen
+        response.cookies.set('authToken', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 3600 // 1 Stunde
         });
         
         // Fehlgeschlagene Versuche zurücksetzen
