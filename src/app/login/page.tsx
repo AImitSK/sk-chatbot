@@ -20,8 +20,13 @@ export default function LoginPage() {
             });
 
             if (res.ok) {
-                await res.json();
-                router.push('/'); // Weiterleitung nach erfolgreichem Login
+                const data = await res.json();
+                if (data.refresh) {
+                    // Seite neu laden, um die Navigation zu aktualisieren
+                    window.location.href = '/';
+                } else {
+                    router.push('/');
+                }
             } else {
                 const errorData = await res.json();
                 setError(errorData.message || 'Unbekannter Fehler beim Login');

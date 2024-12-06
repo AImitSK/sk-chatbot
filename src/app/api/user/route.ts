@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose';
+import { client } from '@/sanity/lib/client';
 
 export async function GET(req: NextRequest) {
     try {
@@ -17,14 +18,33 @@ export async function GET(req: NextRequest) {
             throw new Error('JWT_SECRET is not defined');
         }
 
-        const decoded = jwt.verify(token, secret) as {
+        const secretKey = new TextEncoder().encode(secret);
+        const { payload } = await jose.jwtVerify(token, secretKey);
+        const decoded = payload as {
             username: string;
             role: string;
         };
 
+        // Benutzerinformationen aus Sanity abrufen
+        const user = await client.fetch(`*[_type == "user" && username == $username][0]{
+            username,
+            email,
+            role,
+            "profileImage": profileImage.asset->url
+        }`, { username: decoded.username });
+
+        if (!user) {
+            return NextResponse.json(
+                { message: 'Benutzer nicht gefunden' },
+                { status: 404 }
+            );
+        }
+
         return NextResponse.json({
-            username: decoded.username,
-            role: decoded.role
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            profileImage: user.profileImage || null
         });
     } catch (error) {
         console.error('Error getting user info:', error);

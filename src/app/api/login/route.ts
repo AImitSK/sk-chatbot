@@ -98,9 +98,11 @@ export async function POST(req: NextRequest) {
             token,
             user: {
                 username: user.username,
+                email: user.email,
                 role: user.role || 'user',
-                email: user.email
-            }
+                profileImage: user.profileImage,
+            },
+            refresh: true // Signal zum Neuladen der Seite
         });
         
         // Auth Token setzen
@@ -111,7 +113,6 @@ export async function POST(req: NextRequest) {
             maxAge: 3600 // 1 Stunde
         });
         
-        // Fehlgeschlagene Versuche zurücksetzen
         response.cookies.set('failedAttempts', '0', {
             httpOnly: true,
             secure: true,
@@ -120,10 +121,11 @@ export async function POST(req: NextRequest) {
         });
 
         return response;
+
     } catch (error) {
         console.error('Login error:', error);
         return NextResponse.json(
-            { message: 'Interner Serverfehler' },
+            { message: 'Ein Fehler ist aufgetreten' },
             { status: 500 }
         );
     }

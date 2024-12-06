@@ -24,6 +24,22 @@ export const userType = defineType({
             validation: (Rule) => Rule.required(),
         }),
         defineField({
+            name: 'profileImage',
+            title: 'Profile Image',
+            type: 'image',
+            options: {
+                hotspot: true,
+            },
+            fields: [
+                {
+                    name: 'alt',
+                    type: 'string',
+                    title: 'Alternative Text',
+                    description: 'Important for SEO and accessibility.',
+                }
+            ]
+        }),
+        defineField({
             name: 'role',
             title: 'Role',
             type: 'string',

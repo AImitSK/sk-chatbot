@@ -9,7 +9,11 @@ export async function POST(req: NextRequest) {
         );
 
         // Lösche den Auth-Token
-        response.cookies.delete('authToken');
+        response.cookies.delete('authToken', {
+            path: '/',
+            secure: true,
+            sameSite: 'strict'
+        });
 
         return response;
     } catch (error) {

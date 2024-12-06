@@ -17,21 +17,39 @@ export async function middleware(req: NextRequest) {
     const path = req.nextUrl.pathname;
     console.log('Middleware Request Path:', path);
 
-    // Liste der öffentlichen Routen, die nicht geschützt werden sollen
+    // Liste der öffentlichen Routen und Dateitypen, die nicht geschützt werden sollen
     const publicRoutes = [
         '/login',
         '/api/login',
         '/api/unlock',
         '/locked',
+        '/support',
         '/favicon.ico',
         '/_next',
         '/studio'  // Sanity Studio Route
     ];
 
-    // Prüfen, ob die aktuelle Route öffentlich ist
+    // Liste der geschützten Routen, die einen Login erfordern
+    const protectedRoutes = [
+        '/',  // Dashboard
+        '/profil',
+        '/rechnungen',
+        '/admin'
+    ];
+
+    // Prüfen, ob die aktuelle Route öffentlich ist oder ein Bild/Asset ist
     const isPublicRoute = publicRoutes.some(route => path.startsWith(route));
-    if (isPublicRoute) {
-        console.log('Public route accessed:', path);
+    const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
+    const isAsset = path.match(/\.(jpg|jpeg|png|gif|ico|svg|css|js)$/);
+
+    // Assets und öffentliche Routen durchlassen
+    if (isAsset || isPublicRoute) {
+        console.log('Public route or asset accessed:', path);
+        return NextResponse.next();
+    }
+
+    // Wenn es keine geschützte Route ist, durchlassen
+    if (!isProtectedRoute) {
         return NextResponse.next();
     }
 
@@ -46,8 +64,8 @@ export async function middleware(req: NextRequest) {
 
     // Prüfen ob ein Token vorhanden ist
     if (!token) {
-        console.log('No token found. Redirecting to locked page.');
-        return NextResponse.redirect(new URL('/locked', req.url));
+        console.log('No token found. Redirecting to login page.');
+        return NextResponse.redirect(new URL('/login', req.url));
     }
 
     try {
@@ -85,24 +103,12 @@ export async function middleware(req: NextRequest) {
         } else {
             console.error('Unexpected error during token verification:', error);
         }
-        console.log('Token verification failed. Redirecting to locked page.');
-        return NextResponse.redirect(new URL('/locked', req.url));
+        console.log('Token verification failed. Redirecting to login page.');
+        return NextResponse.redirect(new URL('/login', req.url));
     }
 }
 
-// Definiere die Middleware-Konfiguration für alle Routen außer den öffentlichen
+// Definiere die Middleware-Konfiguration für alle Routen
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except:
-         * 1. /login
-         * 2. /api/login
-         * 3. /api/unlock
-         * 4. /locked
-         * 5. /_next (Next.js internals)
-         * 6. /favicon.ico, /sitemap.xml (Static files)
-         * 7. /studio (Sanity Studio)
-         */
-        '/((?!login|api/login|api/unlock|locked|_next|favicon.ico|sitemap.xml|studio).*)',
-    ],
+    matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
