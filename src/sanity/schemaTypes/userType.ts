@@ -59,19 +59,5 @@ export const userType = defineType({
             initialValue: true,
             validation: (Rule) => Rule.required(),
         }),
-        defineField({
-            name: 'createdAt',
-            title: 'Created At',
-            type: 'datetime',
-            initialValue: () => new Date().toISOString(),
-            validation: (Rule) => Rule.required(),
-        }),
-        defineField({
-            name: 'createdBy',
-            title: 'Created By',
-            type: 'reference',
-            to: [{ type: 'user' }],
-            validation: (Rule) => Rule.required(),
-        }),
     ],
 });

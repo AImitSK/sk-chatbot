@@ -4,7 +4,7 @@ import { groq } from 'next-sanity';  // GROQ-Abfragen
 // Beispiel für eine Funktion, die einen Benutzer anhand des Benutzernamens abruft
 export async function getUserFromSanity(username: string) {
     console.log('Suche Benutzer:', username);
-    
+
     // Erst alle Benutzer abrufen um zu sehen, was in der Datenbank ist
     const allUsersQuery = groq`*[_type == "user"]{username, password}`;
     try {
@@ -31,6 +31,32 @@ export async function getUserFromSanity(username: string) {
         return user;
     } catch (error) {
         console.error('Fehler beim Abrufen des Benutzers:', error);
+        throw error;
+    }
+}
+
+// Neue Funktion zum Abrufen von Benutzerdaten mit zugehörigen Projekten
+export async function fetchUserData(username: string) {
+    const query = groq`
+        *[_type == "user" && username == $username]{
+            ...,
+            "projects": *[_type == "projekt" && references(^._id)]{
+                ...,
+                vertragsmodell->,
+                firma->{
+                    ...,
+                    TechnischerAnsprechpartner,
+                    buchhaltung
+                }
+            }
+        }
+    `;
+    const params = { username };
+
+    try {
+        return await client.fetch(query, params);
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Benutzerdaten:', error);
         throw error;
     }
 }

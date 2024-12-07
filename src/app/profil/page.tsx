@@ -1,96 +1,263 @@
-import { Button } from '@/components/button'
-import { Checkbox, CheckboxField } from '@/components/checkbox'
-import { Divider } from '@/components/divider'
-import { Label } from '@/components/fieldset'
-import { Heading, Subheading } from '@/components/heading'
-import { Input } from '@/components/input'
-import { Select } from '@/components/select'
-import { Text } from '@/components/text'
-import { Textarea } from '@/components/textarea'
-import type { Metadata } from 'next'
-import { Address } from './address'
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Settings',
+import { useEffect, useState } from 'react';
+import { groq } from 'next-sanity';
+import { client } from '@/sanity/client';
+import { Heading, Subheading } from '@/components/heading';
+import { Text } from '@/components/text';
+import { Table, TableBody, TableCell, TableRow } from '@/components/table';
+
+interface UserData {
+    username: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    profileImage: string | null;
+}
+
+async function fetchUserData(username: string) {
+    const query = groq`
+        *[_type == "user" && username == $username]{
+            ...,
+            "projects": *[_type == "projekt" && references(^._id)]{
+                ...,
+                botpress {
+                    embedCode,
+                    clientId,
+                    personalAccessToken,
+                    botId
+                },
+                vertragsmodell->,
+                firma->{
+                    ...,
+                    TechnischerAnsprechpartner,
+                    buchhaltung
+                }
+            }
+        }
+    `;
+    const params = { username };
+    return await client.fetch(query, params);
 }
 
 export default function Settings() {
-  return (
-    <form method="post" className="mx-auto max-w-4xl">
-      <Heading>Settings</Heading>
-      <Divider className="my-10 mt-6" />
+    const [username, setUsername] = useState<string | null>(null);
+    const [userData, setUserData] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
 
-      <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Subheading>Organization Name</Subheading>
-          <Text>This will be displayed on your public profile.</Text>
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const response = await fetch('/api/user', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    const data: UserData = await response.json();
+                    setUsername(data.username);
+                } else {
+                    console.error('Fehler beim Abrufen der Benutzerinformationen');
+                }
+            } catch (error) {
+                console.error('Error fetching user:', error);
+            }
+        };
+
+        fetchUser();
+    }, []);
+
+    useEffect(() => {
+        if (username) {
+            fetchUserData(username)
+                .then(data => setUserData(data))
+                .catch(() => setError('Fehler beim Laden der Daten'));
+        }
+    }, [username]);
+
+    if (error) {
+        return <Text>{error}</Text>;
+    }
+
+    if (!userData || userData.length === 0) {
+        return <Text>Keine Benutzerdaten gefunden</Text>;
+    }
+
+    const user = userData[0];
+
+    return (
+        <div className="container mx-auto mt-10 px-4">
+            <Heading>Einstellungen</Heading>
+
+            <Subheading className="mt-6">User Profil</Subheading>
+            <Table className="mt-2 table-fixed w-full">
+                <TableBody>
+                    <TableRow>
+                        <TableCell className="w-1/2 break-words">Benutzername</TableCell>
+                        <TableCell className="w-1/2 break-words">{user.username}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="w-1/2 break-words">Email</TableCell>
+                        <TableCell className="w-1/2 break-words">{user.email}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="w-1/2 break-words">Rolle</TableCell>
+                        <TableCell className="w-1/2 break-words">{user.role}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell className="w-1/2 break-words">Aktiv</TableCell>
+                        <TableCell className="w-1/2 break-words">{user.isActive ? 'Ja' : 'Nein'}</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+
+            {user.projects.map((project: any) => (
+                <div key={project._id} className="mt-8">
+                    <Subheading>Projekt: {project.name}</Subheading>
+                    <Table className="mt-2 table-fixed w-full">
+                        <TableBody>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Projektname</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.name}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Vertragsbeginn</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.vertragsbeginn}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Vertragsende</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.vertragsende}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Weblink</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.weblink}</TableCell>
+                            </TableRow>
+                            {/* <TableRow>
+    <TableCell className="w-1/2 break-all">Botpress Embed Code</TableCell>
+    <TableCell className="w-1/2 break-all">{project.botpress.embedCode}</TableCell>
+</TableRow> */}
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Botpress ClientId</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.botpress.clientId || 'N/A'}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Botpress PersonalAccessToken</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.botpress.personalAccessToken || 'N/A'}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Botpress BotId</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.botpress.botId || 'N/A'}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+
+                    <Subheading className="mt-6">Firma</Subheading>
+                    <Table className="mt-2 table-fixed w-full">
+                        <TableBody>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Name</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.firma ? project.firma.Name : 'N/A'}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Stadt</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.firma ? project.firma.City : 'N/A'}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">PLZ</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.firma ? project.firma.ZipCode : 'N/A'}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Land</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.firma ? project.firma.Country : 'N/A'}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell className="w-1/2 break-words">Steuernummer</TableCell>
+                                <TableCell className="w-1/2 break-words">{project.firma ? project.firma.TaxNumber : 'N/A'}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+
+                    <Subheading className="mt-6">Technischer Ansprechpartner</Subheading>
+                    {project.firma && project.firma.TechnischerAnsprechpartner ? (
+                        <Table className="mt-2 table-fixed w-full">
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Name</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.firma.TechnischerAnsprechpartner.Name}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Email</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.firma.TechnischerAnsprechpartner.Email}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Telefon</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.firma.TechnischerAnsprechpartner.Phone}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <Text>N/A</Text>
+                    )}
+
+                    <Subheading className="mt-6">Buchhaltung</Subheading>
+                    {project.firma && project.firma.buchhaltung ? (
+                        <Table className="mt-2 table-fixed w-full">
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Name</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.firma.buchhaltung.Name}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Email</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.firma.buchhaltung.Email}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Telefon</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.firma.buchhaltung.Phone}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <Text>N/A</Text>
+                    )}
+
+                    <Subheading className="mt-6">Vertragsmodell Details</Subheading>
+                    {project.vertragsmodell ? (
+                        <Table className="mt-2 table-fixed w-full">
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Name</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.vertragsmodell.name}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Free KI Spend</TableCell>
+                                    <TableCell className="w-1/2 break-words">€{project.vertragsmodell.freeKiSpend}/Monat</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">HITL Funktion</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.vertragsmodell.hitlFunktion ? 'Ja' : 'Nein'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Email Support</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.vertragsmodell.emailSupport ? 'Ja' : 'Nein'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Telefon Support</TableCell>
+                                    <TableCell className="w-1/2 break-words">{project.vertragsmodell.telefonSupport ? 'Ja' : 'Nein'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="w-1/2 break-words">Preis</TableCell>
+                                    <TableCell className="w-1/2 break-words">€{project.vertragsmodell.preis}/Monat</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <Text>N/A</Text>
+                    )}
+                </div>
+            ))}
         </div>
-        <div>
-          <Input aria-label="Organization Name" name="name" defaultValue="Catalyst" />
-        </div>
-      </section>
-
-      <Divider className="my-10" soft />
-
-      <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Subheading>Organization Bio</Subheading>
-          <Text>This will be displayed on your public profile. Maximum 240 characters.</Text>
-        </div>
-        <div>
-          <Textarea aria-label="Organization Bio" name="bio" />
-        </div>
-      </section>
-
-      <Divider className="my-10" soft />
-
-      <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Subheading>Organization Email</Subheading>
-          <Text>This is how customers can contact you for support.</Text>
-        </div>
-        <div className="space-y-4">
-          <Input type="email" aria-label="Organization Email" name="email" defaultValue="info@example.com" />
-          <CheckboxField>
-            <Checkbox name="email_is_public" defaultChecked />
-            <Label>Show email on public profile</Label>
-          </CheckboxField>
-        </div>
-      </section>
-
-      <Divider className="my-10" soft />
-
-      <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Subheading>Address</Subheading>
-          <Text>This is where your organization is registered.</Text>
-        </div>
-        <Address />
-      </section>
-
-      <Divider className="my-10" soft />
-
-      <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Subheading>Currency</Subheading>
-          <Text>The currency that your organization will be collecting.</Text>
-        </div>
-        <div>
-          <Select aria-label="Currency" name="currency" defaultValue="cad">
-            <option value="cad">CAD - Canadian Dollar</option>
-            <option value="usd">USD - United States Dollar</option>
-          </Select>
-        </div>
-      </section>
-
-      <Divider className="my-10" soft />
-
-      <div className="flex justify-end gap-4">
-        <Button type="reset" plain>
-          Reset
-        </Button>
-        <Button type="submit">Save changes</Button>
-      </div>
-    </form>
-  )
+    );
 }

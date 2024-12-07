@@ -10,7 +10,7 @@ function getFailedAttempts(req: NextRequest): number {
 
 export async function POST(req: NextRequest) {
     console.log('Login attempt received');
-    
+
     // Prüfen, ob zu viele fehlgeschlagene Versuche vorliegen
     const failedAttempts = getFailedAttempts(req);
     if (failedAttempts >= 5) {
@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { username, password } = body;
-        
+
         console.log('Attempting to find user:', username);
-        
+
         // Benutzer aus Sanity abrufen
         const user = await getUserFromSanity(username);
         console.log('User found:', user ? 'Yes' : 'No');
@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
                 { message: 'Benutzer nicht gefunden' },
                 { status: 401 }
             );
-            response.cookies.set('failedAttempts', (failedAttempts + 1).toString(), {
+            response.cookies.set({
+                name: 'failedAttempts',
+                value: (failedAttempts + 1).toString(),
+                path: '/',
                 httpOnly: true,
                 secure: true,
                 sameSite: 'strict',
@@ -58,14 +61,17 @@ export async function POST(req: NextRequest) {
         console.log('Comparing passwords');
         const isPasswordCorrect = user.password === password;
         console.log('Password correct:', isPasswordCorrect ? 'Yes' : 'No');
-        
+
         if (!isPasswordCorrect) {
             // Fehlgeschlagene Versuche erhöhen
             const response = NextResponse.json(
                 { message: 'Ungültige Anmeldedaten' },
                 { status: 401 }
             );
-            response.cookies.set('failedAttempts', (failedAttempts + 1).toString(), {
+            response.cookies.set({
+                name: 'failedAttempts',
+                value: (failedAttempts + 1).toString(),
+                path: '/',
                 httpOnly: true,
                 secure: true,
                 sameSite: 'strict',
@@ -89,12 +95,12 @@ export async function POST(req: NextRequest) {
             role: user.role || 'user', // Standardrolle 'user' wenn nicht gesetzt
             isActive: user.isActive !== false // Aktiv, wenn nicht explizit deaktiviert
         })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setExpirationTime('1h')
-        .sign(secret);
+            .setProtectedHeader({ alg: 'HS256' })
+            .setExpirationTime('1h')
+            .sign(secret);
 
         // Erfolgreicher Login - Failed Attempts zurücksetzen
-        const response = NextResponse.json({ 
+        const response = NextResponse.json({
             token,
             user: {
                 username: user.username,
@@ -104,28 +110,23 @@ export async function POST(req: NextRequest) {
             },
             refresh: true // Signal zum Neuladen der Seite
         });
-        
+
         // Auth Token setzen
-        response.cookies.set('authToken', token, {
+        response.cookies.set({
+            name: 'authToken',
+            value: token,
+            path: '/',
             httpOnly: true,
             secure: true,
             sameSite: 'strict',
-            maxAge: 3600 // 1 Stunde
-        });
-        
-        response.cookies.set('failedAttempts', '0', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
-            maxAge: 30 * 60 // 30 Minuten
+            maxAge: 60 * 60 // 1 Stunde
         });
 
         return response;
-
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Error occurred during login process:', error);
         return NextResponse.json(
-            { message: 'Ein Fehler ist aufgetreten' },
+            { message: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.' },
             { status: 500 }
         );
     }
