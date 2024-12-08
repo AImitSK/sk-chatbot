@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@botpress/api": "^0.18.5",
+    "@botpress/client": "^0.36.2",
     "@headlessui/react": "^2.1.6",
     "@heroicons/react": "^2.1.3",
     "@sanity/image-url": "^1.1.0",
