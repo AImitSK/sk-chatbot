@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Client } from '@botpress/client';
 import botpressClient from '../config';
 import type { StatsData } from '../types/stats';
 
@@ -15,28 +14,23 @@ export default function BotpressStats() {
         const fetchStats = async () => {
             try {
                 setLoadingStep('Verbinde mit Botpress...');
-                
-                // Zeitraum der letzten 30 Tage
                 const endDate = new Date();
                 const startDate = new Date();
                 startDate.setDate(endDate.getDate() - 30);
 
                 setLoadingStep('Lade Konversationen...');
-
-                // Konversationen abrufen
                 const conversations = await botpressClient.list.conversations({
                     from: startDate.toISOString(),
                     to: endDate.toISOString()
                 }).collect();
 
-                // Nachrichten und User für jede Konversation analysieren
                 let totalMessages = 0;
                 let messagesByUser = 0;
                 let messagesByBot = 0;
                 let uniqueUsers = new Set<string>();
 
                 setLoadingStep('Analysiere Nachrichten...');
-                const recentConversations = conversations.slice(-10); // Limitiere auf die letzten 10 Konversationen für Performance
+                const recentConversations = conversations.slice(-10);
 
                 for (const conversation of recentConversations) {
                     const messages = await botpressClient.list.messages({
@@ -88,38 +82,40 @@ export default function BotpressStats() {
 
     if (status === 'error') {
         return (
-            <div className="p-4 border border-red-300 rounded bg-red-50">
+            <div className="p-4">
                 <p className="text-red-600">Fehler: {error}</p>
             </div>
         );
     }
 
+    const statsItems = stats ? [
+        { 
+            name: 'Anzahl Konversationen', 
+            stat: stats.totalConversations.toString()
+        },
+        { 
+            name: 'Nachrichten von Nutzern', 
+            stat: `${((stats.messagesByUser / stats.totalMessages) * 100).toFixed(2)}%`
+        },
+        { 
+            name: 'Aktive Nutzer', 
+            stat: stats.activeUsers.toString()
+        }
+    ] : [];
+
     return (
-        <div className="p-4 border border-green-300 rounded bg-green-50">
-            <h2 className="text-xl font-bold text-green-800 mb-4">Chatbot Statistiken (letzte 30 Tage)</h2>
-
-            {stats && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="p-4 bg-white rounded-lg shadow">
-                        <h3 className="font-semibold text-gray-800 mb-2">Konversationen</h3>
-                        <p className="text-2xl font-bold text-blue-600">{stats.totalConversations}</p>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg shadow">
-                        <h3 className="font-semibold text-gray-800 mb-2">Nachrichten</h3>
-                        <div className="space-y-2">
-                            <p className="text-sm text-gray-600">Gesamt: <span className="font-bold text-blue-600">{stats.totalMessages}</span></p>
-                            <p className="text-sm text-gray-600">Von Benutzern: <span className="font-bold text-blue-600">{stats.messagesByUser}</span></p>
-                            <p className="text-sm text-gray-600">Vom Bot: <span className="font-bold text-blue-600">{stats.messagesByBot}</span></p>
+        <div>
+            <div className="space-y-8">
+                <h3 className="text-2xl font-semibold text-gray-900">Letzte 30 Tage</h3>
+                <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+                    {statsItems.map((item) => (
+                        <div key={item.name} className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                            <dt className="truncate text-sm font-medium text-gray-500">{item.name}</dt>
+                            <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{item.stat}</dd>
                         </div>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg shadow">
-                        <h3 className="font-semibold text-gray-800 mb-2">Aktive Benutzer</h3>
-                        <p className="text-2xl font-bold text-blue-600">{stats.activeUsers}</p>
-                    </div>
+                    ))}
                 </div>
-            )}
+            </div>
         </div>
     );
 }
