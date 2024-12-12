@@ -52,18 +52,22 @@ interface UserData {
   profileImage: string | null;
 }
 
-function AccountDropdownMenu({ anchor, onLogout, user }: { 
+function AccountDropdownMenu({ anchor, onLogout, user }: {
   anchor: 'top start' | 'bottom end',
   onLogout: () => void,
-  user: UserData 
+  user: UserData
 }) {
   return (
-    <DropdownMenu className="min-w-64" anchor={anchor}>
-      <DropdownItem onClick={onLogout}>
-        <ArrowRightStartOnRectangleIcon />
-        <span>Sign out</span>
-      </DropdownItem>
-    </DropdownMenu>
+      <DropdownMenu className="min-w-64" anchor={anchor}>
+        <DropdownItem onClick={() => window.location.href = '/userprofil'}>
+          <UserCircleIcon />
+          <span>Userprofil</span>
+        </DropdownItem>
+        <DropdownItem onClick={onLogout}>
+          <ArrowRightStartOnRectangleIcon />
+          <span>Sign out</span>
+        </DropdownItem>
+      </DropdownMenu>
   )
 }
 

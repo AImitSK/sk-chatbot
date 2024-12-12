@@ -2,19 +2,21 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { getBot } from '@botpress/client';
+import { Client } from '@botpress/client'
 import StatsOverview from '@/components/StatsOverview'; // Import der StatsOverview-Komponente
 
 // Dynamischer Import der Botpress-Komponente
-const BotpressTestClient = dynamic(() => import('../components/BotpressTest'), {
+
+const BotpressTestClient = dynamic(() => import('../components/botpressTest'), {
     ssr: false,
     loading: () => <div>Lade Botpress...</div>
 });
 
+
 // Funktion, um Bot-Daten abzurufen
 async function fetchBotData() {
     try {
-        const { bot } = await getBot({
+        const { bot } = await client.getBot({
             id: process.env.NEXT_PUBLIC_BOTPRESS_BOT_ID ?? ''
         });
         console.log('Bot-Daten erfolgreich abgerufen:', bot);
