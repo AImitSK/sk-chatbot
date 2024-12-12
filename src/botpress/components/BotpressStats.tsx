@@ -2,14 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Client } from '@botpress/client';
-
-interface StatsData {
-    totalConversations: number;
-    totalMessages: number;
-    messagesByUser: number;
-    messagesByBot: number;
-    activeUsers: number;
-}
+import botpressClient from '../config';
+import type { StatsData } from '../types/stats';
 
 export default function BotpressStats() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -21,12 +15,7 @@ export default function BotpressStats() {
         const fetchStats = async () => {
             try {
                 setLoadingStep('Verbinde mit Botpress...');
-                const client = new Client({
-                    token: process.env.NEXT_PUBLIC_BOTPRESS_TOKEN!,
-                    workspaceId: process.env.NEXT_PUBLIC_BOTPRESS_WORKSPACE_ID!,
-                    botId: process.env.NEXT_PUBLIC_BOTPRESS_BOT_ID!
-                });
-
+                
                 // Zeitraum der letzten 30 Tage
                 const endDate = new Date();
                 const startDate = new Date();
@@ -35,7 +24,7 @@ export default function BotpressStats() {
                 setLoadingStep('Lade Konversationen...');
 
                 // Konversationen abrufen
-                const conversations = await client.list.conversations({
+                const conversations = await botpressClient.list.conversations({
                     from: startDate.toISOString(),
                     to: endDate.toISOString()
                 }).collect();
@@ -47,10 +36,10 @@ export default function BotpressStats() {
                 let uniqueUsers = new Set<string>();
 
                 setLoadingStep('Analysiere Nachrichten...');
-                const recentConversations = conversations.slice(-10); // Limitiere auf die letzten 100 Konversationen für Performance
+                const recentConversations = conversations.slice(-10); // Limitiere auf die letzten 10 Konversationen für Performance
 
                 for (const conversation of recentConversations) {
-                    const messages = await client.list.messages({
+                    const messages = await botpressClient.list.messages({
                         conversationId: conversation.id,
                         from: startDate.toISOString(),
                         to: endDate.toISOString()
