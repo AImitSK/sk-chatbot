@@ -3,22 +3,20 @@
 import React, { useEffect, useState } from 'react';
 import botpressClient from '../config';
 import type { StatsData } from '../types/stats';
+import StatsCardSkeleton from './StatsCardSkeleton';
 
 export default function BotpressStats() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [error, setError] = useState<string | null>(null);
     const [stats, setStats] = useState<StatsData | null>(null);
-    const [loadingStep, setLoadingStep] = useState('Initialisiere...');
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                setLoadingStep('Verbinde mit Botpress...');
                 const endDate = new Date();
                 const startDate = new Date();
                 startDate.setDate(endDate.getDate() - 30);
 
-                setLoadingStep('Lade Konversationen...');
                 const conversations = await botpressClient.list.conversations({
                     from: startDate.toISOString(),
                     to: endDate.toISOString()
@@ -29,7 +27,6 @@ export default function BotpressStats() {
                 let messagesByBot = 0;
                 let uniqueUsers = new Set<string>();
 
-                setLoadingStep('Analysiere Nachrichten...');
                 const recentConversations = conversations.slice(-10);
 
                 for (const conversation of recentConversations) {
@@ -71,10 +68,13 @@ export default function BotpressStats() {
 
     if (status === 'loading') {
         return (
-            <div className="p-4">
-                <p className="text-blue-600">{loadingStep}</p>
-                <div className="mt-2 h-1 w-full bg-gray-200 rounded">
-                    <div className="h-1 bg-blue-600 rounded animate-pulse"></div>
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-16">
+                    Conversations Dashboard
+                </h2>
+                <div className="space-y-8">
+                    <h3 className="text-2xl font-semibold text-gray-900">Letzte 30 Tage</h3>
+                    <StatsCardSkeleton />
                 </div>
             </div>
         );
@@ -95,7 +95,7 @@ export default function BotpressStats() {
         },
         { 
             name: 'Nachrichten von Nutzern', 
-            stat: `${((stats.messagesByUser / stats.totalMessages) * 100).toFixed(2)}%`
+            stat: stats.messagesByUser.toString()
         },
         { 
             name: 'Aktive Nutzer', 
@@ -105,6 +105,9 @@ export default function BotpressStats() {
 
     return (
         <div>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-16">
+                Conversations Dashboard
+            </h2>
             <div className="space-y-8">
                 <h3 className="text-2xl font-semibold text-gray-900">Letzte 30 Tage</h3>
                 <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
