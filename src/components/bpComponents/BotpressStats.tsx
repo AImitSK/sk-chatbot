@@ -13,27 +13,31 @@ export default function BotpressStats() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const endDate = new Date();
-                const startDate = new Date();
-                startDate.setDate(endDate.getDate() - 30);
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
                 const conversations = await botpressClient.list.conversations({
-                    from: startDate.toISOString(),
-                    to: endDate.toISOString()
+                    sortField: 'updatedAt',
+                    sortDirection: 'desc'
                 }).collect();
+
+                // Filter für die letzten 30 Tage
+                const recentConversations = conversations.filter(conv => {
+                    const convDate = new Date(conv.updatedAt);
+                    return convDate >= thirtyDaysAgo;
+                });
 
                 let totalMessages = 0;
                 let messagesByUser = 0;
                 let messagesByBot = 0;
                 let uniqueUsers = new Set<string>();
 
-                const recentConversations = conversations.slice(-10);
+                // Nehmen die letzten 10 Konversationen für detaillierte Analyse
+                const last10Conversations = recentConversations.slice(-10);
 
-                for (const conversation of recentConversations) {
+                for (const conversation of last10Conversations) {
                     const messages = await botpressClient.list.messages({
-                        conversationId: conversation.id,
-                        from: startDate.toISOString(),
-                        to: endDate.toISOString()
+                        conversationId: conversation.id
                     }).collect();
 
                     messages.forEach(message => {
@@ -48,7 +52,7 @@ export default function BotpressStats() {
                 }
 
                 setStats({
-                    totalConversations: conversations.length,
+                    totalConversations: recentConversations.length,
                     totalMessages,
                     messagesByUser,
                     messagesByBot,

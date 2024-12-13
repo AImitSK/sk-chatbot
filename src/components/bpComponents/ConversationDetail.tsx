@@ -13,10 +13,11 @@ interface Message {
   id: string;
   conversationId: string;
   direction: 'incoming' | 'outgoing';
-  payload: {
-    text: string;
-  };
   createdAt: string;
+  payload: { [key: string]: any };
+  userId?: string;
+  type?: string;
+  tags?: { [key: string]: string };
 }
 
 interface ConversationDetailProps {
@@ -37,8 +38,7 @@ export function ConversationDetail({ conversationId, onBack }: ConversationDetai
 
         const response = await botpressClient.getConversation({ id: conversationId });
         const messagesResponse = await botpressClient.list.messages({
-          conversationId,
-          limit: 100,
+          conversationId
         }).collect();
 
         const sortedMessages = messagesResponse.sort((a, b) => 
@@ -72,7 +72,32 @@ export function ConversationDetail({ conversationId, onBack }: ConversationDetai
     }
   };
 
-  // Funktion zum Extrahieren der User-ID aus den Tags
+  const renderMessagePayload = (payload: { [key: string]: any }) => {
+    if (payload.text) {
+      return <div className="text-gray-900">{payload.text}</div>;
+    }
+
+    if (payload.items && Array.isArray(payload.items)) {
+      return (
+        <div className="space-y-2">
+          {payload.items.map((item: any, index: number) => (
+            <div key={index}>
+              {item.text && <div>{item.text}</div>}
+              {item.title && <div className="font-bold">{item.title}</div>}
+              {item.subtitle && <div className="text-sm">{item.subtitle}</div>}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <pre className="text-sm overflow-x-auto whitespace-pre-wrap">
+        {JSON.stringify(payload, null, 2)}
+      </pre>
+    );
+  };
+
   const getUserId = () => {
     if (details?.conversation?.tags?.['webchat:owner']) {
       return details.conversation.tags['webchat:owner'];
@@ -144,9 +169,7 @@ export function ConversationDetail({ conversationId, onBack }: ConversationDetai
                 <div className="text-sm text-gray-500 mb-1">
                   {message.direction === 'incoming' ? 'User' : 'Bot'} • {formatDate(message.createdAt)}
                 </div>
-                <div className="text-gray-900">
-                  {message.payload.text}
-                </div>
+                {renderMessagePayload(message.payload)}
               </div>
             ))}
           </div>

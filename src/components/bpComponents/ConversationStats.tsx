@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import BotpressStats from '@/components/botpressTest';
+import BotpressStats from '@/components/bpComponents/BotpressStats';
 
 export default function ConversationStats() {
   return (

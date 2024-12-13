@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { Client } from '@botpress/client';
 
-// Botpress Client initialisieren
 const botpressClient = new Client({
     token: process.env.NEXT_PUBLIC_BOTPRESS_TOKEN ?? '',
     workspaceId: process.env.NEXT_PUBLIC_BOTPRESS_WORKSPACE_ID ?? '',
@@ -14,7 +13,7 @@ interface Conversation {
   id: string;
   createdAt: string;
   updatedAt: string;
-  tags?: string[];
+  tags: { [key: string]: string };
   userId?: string;
 }
 
@@ -32,19 +31,24 @@ export function ConversationsList({ onConversationSelect }: ConversationsListPro
     const fetchConversations = async () => {
       try {
         setIsLoading(true);
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - 30); // Letzte 30 Tage
-
+        
+        // Basis-Abruf ohne Zeitfilter
         const fetchedConversations = await botpressClient.list.conversations({
-          from: startDate.toISOString(),
-          to: endDate.toISOString()
+          sortField: 'updatedAt',
+          sortDirection: 'desc'
         }).collect();
 
-        // Sortiere nach updatedAt, neueste zuerst
-        const sortedConversations = fetchedConversations
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-          .slice(0, 10); // Nur die letzten 10 Konversationen
+        // Filtern der letzten 30 Tage auf Client-Seite
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const filteredConversations = fetchedConversations.filter(conv => {
+          const conversationDate = new Date(conv.updatedAt);
+          return conversationDate >= thirtyDaysAgo;
+        });
+
+        // Nur die neuesten 10 Konversationen
+        const sortedConversations = filteredConversations.slice(0, 10);
 
         setConversations(sortedConversations);
         setError(null);
