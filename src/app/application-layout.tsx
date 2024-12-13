@@ -238,7 +238,10 @@ export function ApplicationLayout({
               <SidebarItem href="/rechnungen" current={pathname.startsWith('/rechnungen')}>
                 <Square2StackIcon />
                 <span>Rechnungen</span>
-              </SidebarItem>
+              </SidebarItem><SidebarItem href="/conversations" current={pathname.startsWith('/conversations')}>
+              <Square2StackIcon />
+              <span>Conversations</span>
+            </SidebarItem>
               <SidebarItem href="/firmenprofil" current={pathname.startsWith('/firmenprofil')}>
                 <Cog6ToothIcon />
                 <span>Firmenprofil</span>
