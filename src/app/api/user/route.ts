@@ -5,7 +5,7 @@ import { client } from '@/sanity/lib/client';
 export async function GET(req: NextRequest) {
     try {
         const token = req.cookies.get('authToken')?.value;
-        
+
         if (!token) {
             return NextResponse.json(
                 { message: 'Nicht authentifiziert' },

@@ -239,6 +239,10 @@ export function ApplicationLayout({
                 <Square2StackIcon />
                 <span>Rechnungen</span>
               </SidebarItem>
+              <SidebarItem href="/firmenprofil" current={pathname.startsWith('/firmenprofil')}>
+                <Cog6ToothIcon />
+                <span>Firmenprofil</span>
+              </SidebarItem>
             </SidebarSection>
 
             <SidebarSpacer />
