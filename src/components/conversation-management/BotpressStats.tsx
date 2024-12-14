@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import botpressClient from '../../botpress/config';
-import type { StatsData } from '../../botpress/types/stats';
-import StatsCardSkeleton from '@/components/bpComponents/StatsCardSkeleton';
+import type { StatsData } from '@/botpress/types/stats';
+import StatsCardSkeleton from '@/components/conversation-management/StatsCardSkeleton';
 
 export default function BotpressStats() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');

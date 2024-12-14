@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ConversationDetail } from '@/components/bpComponents/ConversationDetail';
+import { ConversationDetail } from '@/components/conversation-management/ConversationDetail';
 import { useRouter } from 'next/navigation';
 
 export default function ConversationDetailPage({
