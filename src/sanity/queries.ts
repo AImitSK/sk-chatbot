@@ -3,8 +3,6 @@ import { groq } from 'next-sanity';  // GROQ-Abfragen
 
 // Beispiel für eine Funktion, die einen Benutzer anhand des Benutzernamens abruft
 export async function getUserFromSanity(username: string) {
-    console.log('Searching for user:', username);
-
     // Dann den spezifischen Benutzer suchen
     const query = groq`*[_type == "user" && username == $username][0]{
         username,
@@ -17,10 +15,8 @@ export async function getUserFromSanity(username: string) {
 
     try {
         const user = await client.fetch(query, params);
-        console.log('User found:', user ? 'Yes' : 'No');
         return user;
     } catch (error) {
-        console.error('Error fetching user:', error);
         throw error;
     }
 }
@@ -43,10 +39,8 @@ const userDataQuery = groq`
 export async function fetchUserData(username: string) {
     try {
         const result = await client.fetch(userDataQuery, { username });
-        console.log('Projects found:', result?.projects?.length || 0);
         return result;
     } catch (error) {
-        console.error('Error fetching user data:', error);
         throw error;
     }
 }

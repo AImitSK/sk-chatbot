@@ -9,8 +9,6 @@ function getFailedAttempts(req: NextRequest): number {
 }
 
 export async function POST(req: NextRequest) {
-    console.log('Processing login request');
-
     // Prüfen, ob zu viele fehlgeschlagene Versuche vorliegen
     const failedAttempts = getFailedAttempts(req);
     if (failedAttempts >= 5) {
@@ -28,7 +26,6 @@ export async function POST(req: NextRequest) {
         const user = await getUserFromSanity(username);
 
         if (!user) {
-            console.log('Login failed: User not found');
             // Fehlgeschlagene Versuche erhöhen
             const response = NextResponse.json(
                 { message: 'Benutzer nicht gefunden' },
@@ -48,7 +45,6 @@ export async function POST(req: NextRequest) {
 
         // Prüfen, ob der Benutzer aktiv ist (falls das Feld existiert)
         if (user.isActive === false) { // Nur prüfen, wenn explizit auf false gesetzt
-            console.log('Login failed: Account inactive');
             return NextResponse.json(
                 { message: 'Ihr Konto wurde deaktiviert. Bitte wenden Sie sich an den Administrator.' },
                 { status: 403 }
@@ -59,7 +55,6 @@ export async function POST(req: NextRequest) {
         const isPasswordCorrect = user.password === password;
 
         if (!isPasswordCorrect) {
-            console.log('Login failed: Invalid password');
             // Fehlgeschlagene Versuche erhöhen
             const response = NextResponse.json(
                 { message: 'Ungültige Anmeldedaten' },
@@ -77,10 +72,7 @@ export async function POST(req: NextRequest) {
             return response;
         }
 
-        console.log('Login successful');
-
         if (!process.env.JWT_SECRET) {
-            console.error('JWT_SECRET is not set');
             return NextResponse.json(
                 { message: 'Server Konfigurationsfehler' },
                 { status: 500 }
@@ -137,7 +129,6 @@ export async function POST(req: NextRequest) {
 
         return response;
     } catch (error) {
-        console.error('Error occurred during login process:', error);
         return NextResponse.json(
             { message: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.' },
             { status: 500 }
