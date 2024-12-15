@@ -9,7 +9,7 @@ function getFailedAttempts(req: NextRequest): number {
 }
 
 export async function POST(req: NextRequest) {
-    console.log('Login attempt received');
+    console.log('Processing login request');
 
     // Prüfen, ob zu viele fehlgeschlagene Versuche vorliegen
     const failedAttempts = getFailedAttempts(req);
@@ -24,14 +24,11 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { username, password } = body;
 
-        console.log('Attempting to find user:', username);
-
         // Benutzer aus Sanity abrufen
         const user = await getUserFromSanity(username);
-        console.log('User found:', user ? 'Yes' : 'No');
 
         if (!user) {
-            console.log('User not found');
+            console.log('Login failed: User not found');
             // Fehlgeschlagene Versuche erhöhen
             const response = NextResponse.json(
                 { message: 'Benutzer nicht gefunden' },
@@ -51,6 +48,7 @@ export async function POST(req: NextRequest) {
 
         // Prüfen, ob der Benutzer aktiv ist (falls das Feld existiert)
         if (user.isActive === false) { // Nur prüfen, wenn explizit auf false gesetzt
+            console.log('Login failed: Account inactive');
             return NextResponse.json(
                 { message: 'Ihr Konto wurde deaktiviert. Bitte wenden Sie sich an den Administrator.' },
                 { status: 403 }
@@ -58,11 +56,10 @@ export async function POST(req: NextRequest) {
         }
 
         // Direkter Passwortvergleich, da die Passwörter im Klartext gespeichert sind
-        console.log('Comparing passwords');
         const isPasswordCorrect = user.password === password;
-        console.log('Password correct:', isPasswordCorrect ? 'Yes' : 'No');
 
         if (!isPasswordCorrect) {
+            console.log('Login failed: Invalid password');
             // Fehlgeschlagene Versuche erhöhen
             const response = NextResponse.json(
                 { message: 'Ungültige Anmeldedaten' },
@@ -79,6 +76,8 @@ export async function POST(req: NextRequest) {
             });
             return response;
         }
+
+        console.log('Login successful');
 
         if (!process.env.JWT_SECRET) {
             console.error('JWT_SECRET is not set');
@@ -111,16 +110,30 @@ export async function POST(req: NextRequest) {
             refresh: true // Signal zum Neuladen der Seite
         });
 
-        // Auth Token setzen
+        // Auth Token setzen mit angepassten Cookie-Einstellungen
+        const isDevelopment = process.env.NODE_ENV === 'development';
         response.cookies.set({
             name: 'authToken',
             value: token,
             path: '/',
             httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
+            secure: !isDevelopment, // In Entwicklung kein HTTPS erforderlich
+            sameSite: isDevelopment ? 'lax' : 'strict', // Weniger strikt in Entwicklung
             maxAge: 60 * 60 // 1 Stunde
         });
+
+        // Failed Attempts Cookie auch anpassen
+        if (failedAttempts > 0) {
+            response.cookies.set({
+                name: 'failedAttempts',
+                value: '0',
+                path: '/',
+                httpOnly: true,
+                secure: !isDevelopment,
+                sameSite: isDevelopment ? 'lax' : 'strict',
+                maxAge: 30 * 60
+            });
+        }
 
         return response;
     } catch (error) {

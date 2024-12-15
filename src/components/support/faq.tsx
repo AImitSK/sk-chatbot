@@ -15,7 +15,7 @@ interface FAQProps {
 export default function FAQ({ faqs }: FAQProps) {
     return (
         <div className="bg-white">
-            <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-0 lg:py-40">
+            <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-0 lg:py-24">
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="lg:col-start-1 lg:col-span-2">
                         <h2 className="text-4xl font-semibold tracking-tight text-gray-900 sm:text-4xl">Häufig gestellte Fragen</h2>
