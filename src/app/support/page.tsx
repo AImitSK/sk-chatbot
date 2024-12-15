@@ -1,6 +1,7 @@
 import Team from '@/components/support/team';
 import FAQ from '@/components/support/faq';
 import { client } from '@/sanity/client';
+import SupportForm from '@/components/support/supportForm'
 
 export default async function SupportPage() {
     // Query für Team-Daten
@@ -32,8 +33,12 @@ export default async function SupportPage() {
             {/* Team-Komponente */}
             <Team people={people} />
 
+            {/* Support Formulare */}
+            <SupportForm />
+
             {/* FAQ-Komponente */}
             <FAQ faqs={faqs} />
+
         </div>
     );
 }
