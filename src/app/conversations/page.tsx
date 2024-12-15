@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { ConversationsList } from '@/components/bpComponents/ConversationsList';
+import { ConversationsList } from '@/components/conversation-management/ConversationsList';
 
 export default function ConversationsPage() {
   const router = useRouter();
