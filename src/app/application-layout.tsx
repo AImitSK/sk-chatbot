@@ -231,10 +231,6 @@ export function ApplicationLayout({
                 <HomeIcon />
                 <span>Dashboard</span>
               </SidebarItem>
-              <SidebarItem href="/profil" current={pathname.startsWith('/profil')}>
-                <Cog6ToothIcon />
-                <span>Profile</span>
-              </SidebarItem>
               <SidebarItem href="/integration" current={pathname.startsWith('/integration')}>
                 <SparklesIcon />
                 <span>Integration</span>
@@ -245,6 +241,10 @@ export function ApplicationLayout({
               <SidebarItem href="/firmenprofil" current={pathname.startsWith('/firmenprofil')}>
                 <Cog6ToothIcon />
                 <span>Firmenprofil</span>
+              </SidebarItem>
+                <SidebarItem href="/vertragsmodell" current={pathname.startsWith('/vertragsmodell')}>
+                  <ShieldCheckIcon />
+                  <span>Vertragsmodell</span>
               </SidebarItem>
             </SidebarSection>
 

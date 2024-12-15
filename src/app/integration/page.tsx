@@ -100,7 +100,7 @@ export default function IntegrationSettings() {
             )}
 
             {projects.map((project, index) => (
-                <div key={index} className="mb- p-4 border rounded-lg shadow-md">
+                <div key={index} className="mb- p-8 border rounded-lg shadow-md">
                     <h2 className="text-xl font-semibold mb-4">Projekt: {project.name || 'Unbenanntes Projekt'}</h2>
                     <p className="mb-12 text-sm text-gray-600">
                         Verwenden Sie die folgenden Code-Snippets um Ihre KI Bot zu Teilen oder in Ihr Webprojket zu integrieren.
