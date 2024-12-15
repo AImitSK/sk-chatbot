@@ -11,7 +11,6 @@ async function getUsernameFromToken(token: string): Promise<string | null> {
         const { payload } = await jose.jwtVerify(token, secret);
         return payload.username as string;
     } catch (error) {
-        console.error('Fehler beim Validieren des Tokens:', error);
         return null;
     }
 }
@@ -40,7 +39,6 @@ export async function GET(req: NextRequest) {
     try {
         // Token aus Cookies extrahieren
         const token = req.cookies.get('authToken')?.value;
-        console.log('Auth Token:', token ? 'Vorhanden' : 'Nicht vorhanden');
         
         if (!token) {
             return NextResponse.json(
@@ -51,7 +49,6 @@ export async function GET(req: NextRequest) {
 
         // Benutzername aus Token extrahieren
         const username = await getUsernameFromToken(token);
-        console.log('Username:', username);
         
         if (!username) {
             return NextResponse.json(
@@ -63,12 +60,8 @@ export async function GET(req: NextRequest) {
         // Benutzerdaten abrufen
         const projects = await fetchUserData(username);
         if (!projects) {
-            console.log('No projects found for user:', username);
             return NextResponse.json({ error: 'No projects found' }, { status: 404 });
         }
-
-        // Log nur die Projekt-IDs statt der kompletten Konfiguration
-        console.log('Found projects for user:', projects.projects.map(p => p.name));
         
         // Da wir nur ein Projekt haben, nehmen wir das erste
         const project = projects.projects[0];
@@ -82,11 +75,6 @@ export async function GET(req: NextRequest) {
 
         // Überprüfen der Botpress-Konfiguration
         if (!project.botpress?.personalAccessToken || !project.botpress?.workspaceId || !project.botpress?.botId) {
-            console.error('Fehlende Botpress-Konfiguration:', {
-                hasToken: !!project.botpress?.personalAccessToken,
-                hasWorkspaceId: !!project.botpress?.workspaceId,
-                hasBotId: !!project.botpress?.botId
-            });
             return NextResponse.json(
                 { error: 'Botpress-Konfiguration unvollständig' },
                 { status: 400 }
@@ -112,8 +100,6 @@ export async function GET(req: NextRequest) {
                 startDate: startDate.toISOString().split('T')[0], // Format: YYYY-MM-DD
                 endDate: endDate.toISOString().split('T')[0],     // Format: YYYY-MM-DD
             };
-            console.log('API Request URL:', url);
-            console.log('API Request Params:', params);
             
             const analyticsResponse = await axios.get(url, { 
                 ...config,
@@ -124,20 +110,12 @@ export async function GET(req: NextRequest) {
                     'x-workspace-id': project.botpress.workspaceId
                 }
             });
-            console.log('Botpress API Response:', JSON.stringify(analyticsResponse.data, null, 2));
 
             // Die Antwort enthält bereits das richtige Format
             return NextResponse.json({
                 analytics: analyticsResponse.data
             });
         } catch (error: any) {
-            console.error('Fehler in der Analytics API:', {
-                message: error.message,
-                stack: error.stack,
-                response: error.response?.data,
-                status: error.response?.status
-            });
-
             // Spezifische Fehlermeldungen basierend auf dem Fehlertyp
             if (error.response?.status === 401) {
                 return NextResponse.json(
@@ -162,7 +140,6 @@ export async function GET(req: NextRequest) {
             );
         }
     } catch (error: any) {
-        console.error('Fehler beim Abrufen des aktiven Projekts:', error);
         return NextResponse.json(
             { error: 'Fehler beim Abrufen des aktiven Projekts' },
             { status: 500 }
