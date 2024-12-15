@@ -1,13 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Client } from '@botpress/client';
-
-const botpressClient = new Client({
-    token: process.env.NEXT_PUBLIC_BOTPRESS_TOKEN || '',
-    workspaceId: process.env.NEXT_PUBLIC_BOTPRESS_WORKSPACE_ID || '',
-    botId: process.env.NEXT_PUBLIC_BOTPRESS_BOT_ID || '',
-});
+import { useBotpress } from '@/contexts/BotpressContext';
 
 interface Message {
   id: string;
@@ -30,14 +24,17 @@ export function ConversationDetail({ conversationId, onBack }: ConversationDetai
   const [details, setDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { client, isLoading: isClientLoading, error: clientError } = useBotpress();
 
   useEffect(() => {
     const fetchConversationData = async () => {
+      if (!client) return;
+      
       try {
         setIsLoading(true);
 
-        const response = await botpressClient.getConversation({ id: conversationId });
-        const messagesResponse = await botpressClient.list.messages({
+        const response = await client.getConversation({ id: conversationId });
+        const messagesResponse = await client.list.messages({
           conversationId
         }).collect();
 
@@ -56,10 +53,10 @@ export function ConversationDetail({ conversationId, onBack }: ConversationDetai
       }
     };
 
-    if (conversationId) {
+    if (conversationId && client) {
       fetchConversationData();
     }
-  }, [conversationId]);
+  }, [conversationId, client]);
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
