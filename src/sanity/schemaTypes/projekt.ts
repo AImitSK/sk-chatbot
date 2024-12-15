@@ -63,6 +63,11 @@ export const projekt = defineType({
                 }),
                 defineField({
                     type: "string",
+                    name: "shareableLink",
+                    title: "Teilbarer Link",
+                }),
+                defineField({
+                    type: "string",
                     name: "clientId",
                     title: "Botpress ClientId",
                 }),
@@ -73,8 +78,13 @@ export const projekt = defineType({
                 }),
                 defineField({
                     type: "string",
+                    name: "workspaceId",
+                    title: "Workspace Id",
+                }),
+                defineField({
+                    type: "string",
                     name: "botId",
-                    title: "Botpress BotId",
+                    title: "Bot Id",
                 }),
             ],
         }),

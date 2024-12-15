@@ -235,9 +235,9 @@ export function ApplicationLayout({
                 <Cog6ToothIcon />
                 <span>Profile</span>
               </SidebarItem>
-              <SidebarItem href="/rechnungen" current={pathname.startsWith('/rechnungen')}>
-                <Square2StackIcon />
-                <span>Rechnungen</span>
+              <SidebarItem href="/integration" current={pathname.startsWith('/integration')}>
+                <SparklesIcon />
+                <span>Integration</span>
               </SidebarItem><SidebarItem href="/conversations" current={pathname.startsWith('/conversations')}>
               <Square2StackIcon />
               <span>Conversations</span>
