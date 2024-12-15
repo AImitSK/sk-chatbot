@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Client } from '@botpress/client';
+import { useBotpress } from '@/contexts/BotpressContext';
 
-const botpressClient = new Client({
-    token: process.env.NEXT_PUBLIC_BOTPRESS_TOKEN ?? '',
-    workspaceId: process.env.NEXT_PUBLIC_BOTPRESS_WORKSPACE_ID ?? '',
-    botId: process.env.NEXT_PUBLIC_BOTPRESS_BOT_ID ?? '',
-});
+interface BotpressCredentials {
+  token: string;
+  workspaceId: string;
+  botId: string;
+}
 
 interface Conversation {
   id: string;
@@ -35,10 +35,14 @@ export function ConversationsList({ onConversationSelect }: ConversationsListPro
   const [currentPage, setCurrentPage] = useState(1);
   const [totalConversations, setTotalConversations] = useState(0);
   const [nextToken, setNextToken] = useState<string | null>(null);
+  const { client, isLoading: isClientLoading, error: clientError } = useBotpress();
   const itemsPerPage = 10;
 
+  // Lade die Konversationen wenn der Client initialisiert ist
   useEffect(() => {
     const fetchConversations = async () => {
+      if (!client) return;
+
       try {
         setIsLoading(true);
         
@@ -51,7 +55,7 @@ export function ConversationsList({ onConversationSelect }: ConversationsListPro
           params.nextToken = nextToken;
         }
 
-        const pagedConversations = await botpressClient.list.conversations(params).collect();
+        const pagedConversations = await client.list.conversations(params).collect();
 
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -65,7 +69,7 @@ export function ConversationsList({ onConversationSelect }: ConversationsListPro
         setConversations(filteredConversations.slice(0, 10));
         
         // Hole die Gesamtanzahl nur für die Pagination
-        const totalCount = await botpressClient.list.conversations({
+        const totalCount = await client.list.conversations({
           sortField: 'updatedAt',
           sortDirection: 'desc'
         }).collect();
@@ -85,8 +89,10 @@ export function ConversationsList({ onConversationSelect }: ConversationsListPro
       }
     };
 
-    fetchConversations();
-  }, [currentPage]);
+    if (client) {
+      fetchConversations();
+    }
+  }, [currentPage, client]);
 
   const formatDate = (date: string) => {
     const now = new Date();
@@ -110,6 +116,22 @@ export function ConversationsList({ onConversationSelect }: ConversationsListPro
       onConversationSelect(conversationId);
     }
   };
+
+  if (clientError) {
+    return (
+      <div className="p-4 text-red-600 bg-red-50 rounded-md">
+        {clientError}
+      </div>
+    );
+  }
+
+  if (isClientLoading) {
+    return (
+      <div className="flex justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

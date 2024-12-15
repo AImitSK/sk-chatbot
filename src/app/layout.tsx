@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import type React from 'react'
 import { ApplicationLayout } from './application-layout'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { BotpressProvider } from '@/contexts/BotpressContext'
 
 export const metadata: Metadata = {
   title: {
@@ -26,9 +27,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
       <body>
-        <AuthProvider>
-          <ApplicationLayout events={events}>{children}</ApplicationLayout>
-        </AuthProvider>
+        <BotpressProvider>
+          <AuthProvider>
+            <ApplicationLayout events={events}>{children}</ApplicationLayout>
+          </AuthProvider>
+        </BotpressProvider>
       </body>
     </html>
   )
