@@ -61,20 +61,17 @@ export async function GET(req: NextRequest) {
         }
 
         // Benutzerdaten abrufen
-        const userData = await fetchUserData(username);
-        const projects = userData?.projects || [];
-        console.log('Projekte:', JSON.stringify(projects, null, 2));
-        
-        if (!projects || projects.length === 0) {
-            return NextResponse.json(
-                { error: 'Keine Projekte gefunden' },
-                { status: 404 }
-            );
+        const projects = await fetchUserData(username);
+        if (!projects) {
+            console.log('No projects found for user:', username);
+            return NextResponse.json({ error: 'No projects found' }, { status: 404 });
         }
 
+        // Log nur die Projekt-IDs statt der kompletten Konfiguration
+        console.log('Found projects for user:', projects.projects.map(p => p.name));
+        
         // Da wir nur ein Projekt haben, nehmen wir das erste
-        const project = projects[0];
-        console.log('Gewähltes Projekt:', JSON.stringify(project, null, 2));
+        const project = projects.projects[0];
         
         if (!project) {
             return NextResponse.json(
@@ -97,22 +94,6 @@ export async function GET(req: NextRequest) {
         }
 
         try {
-            // Setze das Start- und Enddatum für den letzten Monat
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setMonth(startDate.getMonth() - 1);
-
-            // Formatiere die Daten für die Botpress API
-            const startDateString = startDate.toISOString();
-            const endDateString = endDate.toISOString();
-
-            console.log('API Request Konfiguration:', {
-                botId: project.botpress.botId,
-                workspaceId: project.botpress.workspaceId,
-                startDate: startDateString,
-                endDate: endDateString
-            });
-
             // Konfiguriere den API-Request mit den Projekt-spezifischen Zugangsdaten
             const config = {
                 headers: {
@@ -121,43 +102,34 @@ export async function GET(req: NextRequest) {
                 }
             };
 
-            // Hole die Analytics-Daten von Botpress
             // Der neue Endpunkt für die Botpress Cloud API v1
-            const url = `https://api.botpress.cloud/v1/bots/${project.botpress.botId}/analytics/conversations`;
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30); // Letzten 30 Tage
+
+            const url = `https://api.botpress.cloud/v1/admin/bots/${project.botpress.botId}/analytics`;
+            const params = {
+                startDate: startDate.toISOString().split('T')[0], // Format: YYYY-MM-DD
+                endDate: endDate.toISOString().split('T')[0],     // Format: YYYY-MM-DD
+            };
             console.log('API Request URL:', url);
+            console.log('API Request Params:', params);
             
-            const analyticsResponse = await axios.get(url, config);
+            const analyticsResponse = await axios.get(url, { 
+                ...config,
+                params,
+                headers: {
+                    ...config.headers,
+                    'accept': 'application/json',
+                    'x-workspace-id': project.botpress.workspaceId
+                }
+            });
             console.log('Botpress API Response:', JSON.stringify(analyticsResponse.data, null, 2));
 
-            // Transformiere die Daten in das erwartete Format
-            const records = analyticsResponse.data.records || [];
-
-            // Transformiere die Daten in das Format, das der Hook erwartet
-            const response = {
-                analytics: {
-                    records: records.map((record: {
-                        startTime: string;
-                        endTime: string;
-                        newUsers: number;
-                        returningUsers: number;
-                        sessions: number;
-                        userMessages: number;
-                        botMessages: number;
-                    }) => ({
-                        startDate: new Date(record.startTime).toISOString(),
-                        endDate: new Date(record.endTime).toISOString(),
-                        newUsers: record.newUsers || 0,
-                        returningUsers: record.returningUsers || 0,
-                        sessions: record.sessions || 0,
-                        userMessages: record.userMessages || 0,
-                        botMessages: record.botMessages || 0
-                    }))
-                }
-            };
-
-            console.log('Final response:', JSON.stringify(response, null, 2));
-            return NextResponse.json(response);
-
+            // Die Antwort enthält bereits das richtige Format
+            return NextResponse.json({
+                analytics: analyticsResponse.data
+            });
         } catch (error: any) {
             console.error('Fehler in der Analytics API:', {
                 message: error.message,

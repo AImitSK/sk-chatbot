@@ -44,6 +44,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserData {
   username: string;
@@ -85,11 +86,10 @@ function UserSection({ user, onLogout }: { user: UserData | null, onLogout: () =
     <Dropdown>
       <DropdownButton as={SidebarItem}>
         <span className="flex min-w-0 items-center gap-3">
-          <div className="w-10 h-10 overflow-hidden">
+          <div className="w-10 h-10 overflow-hidden rounded-full">
             <Avatar 
-              src={user.profileImage || '/users/erica.jpg'} 
+              src={user.profileImage || '/default-avatar.png'} 
               className="w-full h-full object-cover" 
-              square 
               alt={`Profile picture of ${user.username}`}
             />
           </div>
@@ -98,11 +98,11 @@ function UserSection({ user, onLogout }: { user: UserData | null, onLogout: () =
               {user.username}
             </span>
             <span className="block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400">
-              {user.email}
+              {user.email || 'No email provided'}
             </span>
           </span>
+          <ChevronUpIcon className="h-5 w-5 flex-none text-zinc-400" />
         </span>
-        <ChevronUpIcon />
       </DropdownButton>
       <AccountDropdownMenu 
         anchor="top start" 
@@ -120,59 +120,9 @@ export function ApplicationLayout({
   events: Awaited<ReturnType<typeof getEvents>>
   children: React.ReactNode
 }) {
-  let pathname = usePathname()
   const router = useRouter()
-  const [user, setUser] = useState<UserData | null>(null)
-
-  useEffect(() => {
-    // Username vom Server abrufen
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/user', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        } else {
-          console.error('Fehler beim Abrufen der Benutzerinformationen');
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        setUser(null);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setUser(null);
-        // Komplette Seite neu laden statt nur router.push
-        window.location.href = '/login';
-      } else {
-        console.error('Fehler beim Ausloggen');
-        window.location.href = '/login';
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      window.location.href = '/login';
-    }
-  };
+  const pathname = usePathname()
+  const { user, logout } = useAuth();
 
   return (
     <SidebarLayout
@@ -200,7 +150,7 @@ export function ApplicationLayout({
                 </DropdownButton>
                 <AccountDropdownMenu 
                   anchor="bottom end" 
-                  onLogout={handleLogout}
+                  onLogout={logout}
                   user={user}
                 />
               </Dropdown>
@@ -231,13 +181,9 @@ export function ApplicationLayout({
                 <HomeIcon />
                 <span>Dashboard</span>
               </SidebarItem>
-              <SidebarItem href="/profil" current={pathname.startsWith('/profil')}>
-                <Cog6ToothIcon />
-                <span>Profile</span>
-              </SidebarItem>
-              <SidebarItem href="/rechnungen" current={pathname.startsWith('/rechnungen')}>
-                <Square2StackIcon />
-                <span>Rechnungen</span>
+              <SidebarItem href="/integration" current={pathname.startsWith('/integration')}>
+                <SparklesIcon />
+                <span>Integration</span>
               </SidebarItem><SidebarItem href="/conversations" current={pathname.startsWith('/conversations')}>
               <Square2StackIcon />
               <span>Conversations</span>
@@ -245,6 +191,10 @@ export function ApplicationLayout({
               <SidebarItem href="/firmenprofil" current={pathname.startsWith('/firmenprofil')}>
                 <Cog6ToothIcon />
                 <span>Firmenprofil</span>
+              </SidebarItem>
+                <SidebarItem href="/vertragsmodell" current={pathname.startsWith('/vertragsmodell')}>
+                  <ShieldCheckIcon />
+                  <span>Vertragsmodell</span>
               </SidebarItem>
             </SidebarSection>
 
@@ -255,7 +205,7 @@ export function ApplicationLayout({
                 <QuestionMarkCircleIcon />
                 <span>Support</span>
               </SidebarItem>
-              <UserSection user={user} onLogout={handleLogout} />
+              <UserSection user={user} onLogout={logout} />
             </SidebarSection>
           </SidebarBody>
         </Sidebar>

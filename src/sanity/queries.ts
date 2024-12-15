@@ -3,60 +3,50 @@ import { groq } from 'next-sanity';  // GROQ-Abfragen
 
 // Beispiel für eine Funktion, die einen Benutzer anhand des Benutzernamens abruft
 export async function getUserFromSanity(username: string) {
-    console.log('Suche Benutzer:', username);
-
-    // Erst alle Benutzer abrufen um zu sehen, was in der Datenbank ist
-    const allUsersQuery = groq`*[_type == "user"]{username, password}`;
-    try {
-        const allUsers = await client.fetch(allUsersQuery);
-        console.log('Alle Benutzer in der Datenbank:', allUsers);
-    } catch (error) {
-        console.error('Fehler beim Abrufen aller Benutzer:', error);
-    }
+    console.log('Searching for user:', username);
 
     // Dann den spezifischen Benutzer suchen
     const query = groq`*[_type == "user" && username == $username][0]{
         username,
-        password
+        password,
+        email,
+        role,
+        "profileImage": profileImage.asset->url
     }`;
     const params = { username };
 
     try {
         const user = await client.fetch(query, params);
-        console.log('Gefundener Benutzer:', user ? 'Ja' : 'Nein');
-        if (user) {
-            console.log('Benutzername übereinstimmung:', user.username === username);
-            console.log('Passwort vorhanden:', !!user.password);
-        }
+        console.log('User found:', user ? 'Yes' : 'No');
         return user;
     } catch (error) {
-        console.error('Fehler beim Abrufen des Benutzers:', error);
+        console.error('Error fetching user:', error);
         throw error;
     }
 }
 
-// Neue Funktion zum Abrufen von Benutzerdaten mit zugehörigen Projekten
-export async function fetchUserData(username: string) {
-    const query = groq`
-        *[_type == "user" && username == $username]{
-            ...,
-            "projects": *[_type == "projekt" && references(^._id)]{
-                ...,
-                vertragsmodell->,
-                firma->{
-                    ...,
-                    TechnischerAnsprechpartner,
-                    buchhaltung
-                }
-            }
-        }
-    `;
-    const params = { username };
+// GROQ Query für Benutzerdaten
+const userDataQuery = groq`
+*[_type == "user" && username == $username][0] {
+  "projects": *[_type == "projekt" && references(^._id)] {
+    name,
+    botpress {
+      clientId,
+      personalAccessToken,
+      botId,
+      workspaceId
+    }
+  }
+}`
 
+// Funktion zum Abrufen von Benutzerdaten mit zugehörigen Projekten
+export async function fetchUserData(username: string) {
     try {
-        return await client.fetch(query, params);
+        const result = await client.fetch(userDataQuery, { username });
+        console.log('Projects found:', result?.projects?.length || 0);
+        return result;
     } catch (error) {
-        console.error('Fehler beim Abrufen der Benutzerdaten:', error);
+        console.error('Error fetching user data:', error);
         throw error;
     }
 }
