@@ -12,24 +12,24 @@ export const LastMonthSessions = ({
 }: LastMonthSessionsProps) => {
   const stats = [
     {
-      title: 'Bot Messages',
+      title: 'Bot-Nachrichten',
       value: botMessages,
       color: COLORS.bot
     },
     {
-      title: 'User Messages',
+      title: 'Benutzer-Nachrichten',
       value: userMessages,
       color: COLORS.user
     },
     {
-      title: 'Sessions',
+      title: 'Sitzungen',
       value: sessions,
       color: COLORS.returning
     }
   ];
 
   return (
-    <AnalyticsCard title="Last Month Sessions">
+    <AnalyticsCard title="Sitzungen des letzten Monats">
       <div className="mt-4 space-y-4">
         {stats.map((stat, index) => (
           <div 

@@ -24,13 +24,26 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, v
 };
 
 export const UsersGraph: React.FC<{ data: UserGraphData[] }> = ({ data }) => {
-  const sortedData = React.useMemo(() => 
-    [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  , [data]);
+  const sortedData = React.useMemo(() => {
+    // Filtere NaN-Werte und ersetze sie mit 0
+    return [...data]
+      .map(item => ({
+        ...item,
+        total: isNaN(item.total) ? 0 : item.total,
+        new: isNaN(item.new) ? 0 : item.new,
+        returning: isNaN(item.returning) ? 0 : item.returning,
+        // Formatiere das Datum
+        date: new Date(item.date).toLocaleDateString('de-DE', {
+          day: '2-digit',
+          month: '2-digit'
+        })
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [data]);
 
   return (
     <AnalyticsCard 
-      title="Users Graph" 
+      title="User Statistics" 
       className="col-span-2"
       actions={
         <span className="text-xs text-gray-500">
@@ -58,41 +71,30 @@ export const UsersGraph: React.FC<{ data: UserGraphData[] }> = ({ data }) => {
                 <stop offset="95%" stopColor={COLORS.returning} stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#f5f5f5" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="date" 
-              tickFormatter={formatDate}
-              stroke="#9ca3af"
-              fontSize={CHART_CONFIG.fontSize}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: '#6b7280' }}
+              tick={{ fontSize: 12 }}
             />
             <YAxis 
-              stroke="#9ca3af"
-              fontSize={CHART_CONFIG.fontSize}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: '#6b7280' }}
-              tickFormatter={(value, index) => `${Math.round(value)}`}
+              tick={{ fontSize: 12 }}
+              allowDecimals={false}
+              domain={[0, 'auto']}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              verticalAlign="bottom"
-              height={CHART_CONFIG.legendHeight}
+            <Legend
+              verticalAlign="top"
+              align="left"
               iconType="circle"
-              iconSize={CHART_CONFIG.iconSize}
-              wrapperStyle={{ fontSize: '12px' }}
             />
             <Area
               type="monotone"
               dataKey="total"
-              name="Total Users"
+              name="Gesamte Nutzer"
               stroke={COLORS.total}
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorTotal)"
-              dot={false}
             />
             <Area
               type="monotone"
@@ -102,7 +104,6 @@ export const UsersGraph: React.FC<{ data: UserGraphData[] }> = ({ data }) => {
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorNew)"
-              dot={false}
             />
             <Area
               type="monotone"
@@ -112,7 +113,6 @@ export const UsersGraph: React.FC<{ data: UserGraphData[] }> = ({ data }) => {
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorReturning)"
-              dot={false}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -123,16 +123,25 @@ export const UsersGraph: React.FC<{ data: UserGraphData[] }> = ({ data }) => {
 
 export const MessagesPerSession: React.FC<{ data: MessageData[] }> = ({ data }) => {
   const sortedData = React.useMemo(() => 
-    [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    [...data]
+      .map(item => ({
+        ...item,
+        messages: isNaN(item.messages) ? 0 : item.messages,
+        date: new Date(item.date).toLocaleDateString('de-DE', {
+          day: '2-digit',
+          month: '2-digit'
+        })
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   , [data]);
 
   return (
     <AnalyticsCard 
-      title="Messages per Session" 
+      title="Nachrichten pro Sitzung" 
       className="col-span-2"
       actions={
         <span className="text-xs text-gray-500">
-          Last 30 Days
+          Letzte 30 Tage
         </span>
       }
     >
@@ -151,7 +160,6 @@ export const MessagesPerSession: React.FC<{ data: MessageData[] }> = ({ data }) 
             <CartesianGrid stroke="#f5f5f5" vertical={false} />
             <XAxis 
               dataKey="date" 
-              tickFormatter={formatDate}
               stroke="#9ca3af"
               fontSize={CHART_CONFIG.fontSize}
               tickLine={false}
@@ -166,11 +174,23 @@ export const MessagesPerSession: React.FC<{ data: MessageData[] }> = ({ data }) 
               tick={{ fill: '#6b7280' }}
               tickFormatter={(value, index) => `${Math.round(value)}`}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={({ active, payload, label }) => {
+              if (active && payload && payload.length) {
+                return (
+                  <div className="bg-white p-2 shadow-lg rounded-lg border border-gray-100 text-xs">
+                    <p className="text-gray-600 mb-1">{label}</p>
+                    <p style={{ color: COLORS.bot }} className="font-medium">
+                      Nachrichten: {payload[0].value !== undefined ? Math.round(Number(payload[0].value)) : 0}
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            }} />
             <Area
               type="monotone"
               dataKey="messages"
-              name="Messages"
+              name="Nachrichten"
               stroke={COLORS.bot}
               strokeWidth={2}
               fillOpacity={1}

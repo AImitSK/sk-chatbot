@@ -1,12 +1,18 @@
-export const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+export const formatDate = (dateStr: string) => {
+  return dateStr; // Die Daten kommen bereits im richtigen Format (DD.MM)
 };
 
-export const sortDataByDate = <T extends { date: string }>(data: T[]): T[] => {
-  return [...data].sort((a, b) => 
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+export const sortDataByDate = (data: any[]) => {
+  return [...data].sort((a, b) => {
+    const [dayA, monthA] = a.date.split('.');
+    const [dayB, monthB] = b.date.split('.');
+    
+    // Vergleiche zuerst den Monat, dann den Tag
+    if (monthA !== monthB) {
+      return parseInt(monthA) - parseInt(monthB);
+    }
+    return parseInt(dayA) - parseInt(dayB);
+  });
 };
 
 export const calculatePercentage = (value: number, total: number): number => {

@@ -12,8 +12,8 @@ export const LastMonthUserTypes = ({
   returningUsers 
 }: LastMonthUserTypesProps) => {
   const data = useMemo(() => [
-    { name: 'New Users', value: newUsers },
-    { name: 'Returning Users', value: returningUsers }
+    { name: 'Neue Benutzer', value: newUsers },
+    { name: 'Wiederkehrende Benutzer', value: returningUsers }
   ], [newUsers, returningUsers]);
 
   const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
@@ -35,7 +35,7 @@ export const LastMonthUserTypes = ({
   };
 
   return (
-    <AnalyticsCard title="Last Month User Types">
+    <AnalyticsCard title="Benutzertypen des letzten Monats">
       <div className="h-[220px] w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
