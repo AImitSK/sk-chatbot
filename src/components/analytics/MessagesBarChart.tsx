@@ -16,7 +16,7 @@ export const MessagesBarChart = ({ data }: MessagesBarChartProps) => {
         <div className="bg-white p-2 shadow-lg rounded-lg border border-gray-100 text-xs">
           <p className="text-gray-600 mb-1">{formatDate(label || '')}</p>
           <p className="font-medium" style={{ color: COLORS.bot }}>
-            Messages: {payload[0].value}
+            Nachrichten: {payload[0].value}
           </p>
         </div>
       );
@@ -26,10 +26,10 @@ export const MessagesBarChart = ({ data }: MessagesBarChartProps) => {
 
   return (
     <AnalyticsCard 
-      title="Messages" 
+      title="Nachrichten" 
       className="col-span-2"
       actions={
-        <span className="text-xs text-gray-500">Last 30 Days</span>
+        <span className="text-xs text-gray-500">Letzte 30 Tage</span>
       }
     >
       <div className="h-[220px] w-full mt-4">
@@ -54,12 +54,12 @@ export const MessagesBarChart = ({ data }: MessagesBarChartProps) => {
               tickLine={false}
               axisLine={false}
               tick={{ fill: '#6b7280' }}
-              tickFormatter={(value) => Math.round(value)}
+              tickFormatter={(value) => Math.round(value).toString()}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="messages"
-              name="Messages"
+              name="Nachrichten"
               fill={COLORS.bot}
             />
           </BarChart>

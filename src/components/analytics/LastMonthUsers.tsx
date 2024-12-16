@@ -6,14 +6,10 @@ import { AnalyticsCard } from './AnalyticsCard';
 
 export const LastMonthUsers = ({ totalUsers }: LastMonthUsersProps) => {
   return (
-    <AnalyticsCard title="Last Month Users">
-      <div className="mt-4">
-        <div className="flex flex-col">
-          <span className="text-4xl font-semibold text-gray-900">
-            {totalUsers.toLocaleString()}
-          </span>
-          <span className="text-sm text-gray-500 mt-1">Total Users</span>
-        </div>
+    <AnalyticsCard title="Benutzer des letzten Monats">
+      <div className="text-center mt-4">
+        <p className="text-sm text-gray-500">Gesamtbenutzer</p>
+        <p className="text-5xl font-semibold mt-2">{totalUsers}</p>
       </div>
     </AnalyticsCard>
   );
