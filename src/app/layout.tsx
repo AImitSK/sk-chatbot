@@ -27,11 +27,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
       <body>
-        <BotpressProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <BotpressProvider>
             <ApplicationLayout events={events}>{children}</ApplicationLayout>
-          </AuthProvider>
-        </BotpressProvider>
+          </BotpressProvider>
+        </AuthProvider>
       </body>
     </html>
   )
