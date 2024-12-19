@@ -5,12 +5,14 @@ type AvatarProps = {
     src?: string | null
     alt?: string
     className?: string
+    square?: boolean // Neue Option hinzugefügt
 }
 
 export function Avatar({
                            src = null,
                            alt = '',
                            className,
+                           square = false, // Standard ist rund
                            ...props
                        }: AvatarProps & React.ComponentPropsWithoutRef<'div'>) {
     return (
@@ -18,7 +20,8 @@ export function Avatar({
             {...props}
             className={clsx(
                 className,
-                'w-10 h-10 overflow-hidden bg-gray-300 rounded-full relative aspect-square'
+                // Wenn `square` wahr ist, entferne abgerundete Ecken
+                square ? 'w-10 h-10 overflow-hidden bg-gray-300 relative' : 'w-10 h-10 overflow-hidden bg-gray-300 rounded-full relative aspect-square'
             )}
         >
             {src ? (
