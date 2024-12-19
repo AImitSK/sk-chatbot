@@ -8,7 +8,6 @@ import { Select } from '@/components/select'
 import { Text } from '@/components/text'
 import { Textarea } from '@/components/textarea'
 import type { Metadata } from 'next'
-import { Address } from './address'
 
 export const metadata: Metadata = {
   title: 'Settings',
