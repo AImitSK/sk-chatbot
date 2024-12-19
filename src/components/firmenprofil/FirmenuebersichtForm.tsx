@@ -18,7 +18,7 @@ interface Props {
     onChange: (updatedData: FirmaData) => void;
 }
 
-export function FirmenübersichtForm({ 
+export function FirmenuebersichtForm({
     data, 
     isEditing, 
     onEdit, 

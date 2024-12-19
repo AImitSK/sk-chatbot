@@ -5,7 +5,7 @@ import { groq } from 'next-sanity';
 import { client } from '@/sanity/client';
 import { Heading, Subheading } from '@/components/heading';
 import { Text } from '@/components/text';
-import { FirmenübersichtForm } from '@/components/firmenprofil/FirmenübersichtForm';
+import { FirmenuebersichtForm } from '@/components/firmenprofil/FirmenuebersichtForm';
 import { TechnischerAnsprechpartnerForm } from '@/components/firmenprofil/TechnischerAnsprechpartnerForm';
 import { BuchhaltungForm } from '@/components/firmenprofil/BuchhaltungForm';
 
@@ -34,14 +34,34 @@ async function fetchUserData(username: string) {
     return await client.fetch(query, params);
 }
 
+type Firma = {
+    Name?: string;
+    Street?: string;
+    City?: string;
+    ZipCode?: string;
+    Country?: string;
+    TechnischerAnsprechpartner?: {
+        Name?: string;
+        Email?: string;
+        Phone?: string;
+    };
+    buchhaltung?: {
+        Name?: string;
+        Email?: string;
+        Phone?: string;
+    };
+};
+
+
+
 async function updateFirmaData(firmaId: string, updateData: any, section?: string) {
     try {
         console.log('Updating firma with ID:', firmaId);
         console.log('Update data:', updateData);
-        
+
         // Holen der Firma direkt über die ID
         const firmaTx = client.transaction();
-        
+
         if (section === 'TechnischerAnsprechpartner') {
             firmaTx.patch(firmaId, {
                 set: {
@@ -49,9 +69,9 @@ async function updateFirmaData(firmaId: string, updateData: any, section?: strin
                         _type: 'TechnischerAnsprechpartner',
                         Name: updateData.Name,
                         Email: updateData.Email,
-                        Phone: updateData.Phone
-                    }
-                }
+                        Phone: updateData.Phone,
+                    },
+                },
             });
         } else if (section === 'buchhaltung') {
             firmaTx.patch(firmaId, {
@@ -60,41 +80,53 @@ async function updateFirmaData(firmaId: string, updateData: any, section?: strin
                         _type: 'buchhaltung',
                         Name: updateData.Name,
                         Email: updateData.Email,
-                        Phone: updateData.Phone
-                    }
-                }
+                        Phone: updateData.Phone,
+                    },
+                },
             });
         } else {
             // Für Hauptfirmendaten
-            const updates = {};
-            if (updateData.Name) updates['Name'] = updateData.Name;
-            if (updateData.Street) updates['Street'] = updateData.Street;
-            if (updateData.City) updates['City'] = updateData.City;
-            if (updateData.ZipCode) updates['ZipCode'] = updateData.ZipCode;
-            if (updateData.Country) updates['Country'] = updateData.Country;
+            const updates: Partial<Firma> = {}; // Typ hinzufügen
+            if (updateData.Name) updates.Name = updateData.Name;
+            if (updateData.Street) updates.Street = updateData.Street;
+            if (updateData.City) updates.City = updateData.City;
+            if (updateData.ZipCode) updates.ZipCode = updateData.ZipCode;
+            if (updateData.Country) updates.Country = updateData.Country;
 
             firmaTx.patch(firmaId, {
-                set: updates
+                set: updates,
             });
+
         }
 
-        const result = await firmaTx.commit();
-        console.log('Update result:', result);
-        return result[0];
+        // Abschließen der Transaktion
+        try {
+            const result = await firmaTx.commit();
+            console.log('Update result:', result);
+            if (result.results && result.results.length > 0) {
+                return result.results[0];
+            } else {
+                throw new Error('Keine Ergebnisse nach Transaktion.');
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            throw error;
+        }
     } catch (error) {
-        console.error('Update error:', error);
+        console.error('Allgemeiner Fehler bei der Aktualisierung:', error);
         throw error;
     }
 }
 
+// Typen
 type EditingState = {
-    firmenübersicht: number | null;
+    firmenuebersicht: number | null;
     technischerAnsprechpartner: number | null;
     buchhaltung: number | null;
 };
 
 type SuccessMessages = {
-    firmenübersicht: string | null;
+    firmenuebersicht: string | null;
     technischerAnsprechpartner: string | null;
     buchhaltung: string | null;
 };
@@ -104,7 +136,7 @@ export default function Firmenprofil() {
     const [userData, setUserData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [editing, setEditing] = useState<EditingState>({
-        firmenübersicht: null,
+        firmenuebersicht: null,
         technischerAnsprechpartner: null,
         buchhaltung: null
     });
@@ -114,7 +146,7 @@ export default function Firmenprofil() {
         buchhaltung: null
     });
     const [successMessages, setSuccessMessages] = useState<SuccessMessages>({
-        firmenübersicht: null,
+        firmenuebersicht: null,
         technischerAnsprechpartner: null,
         buchhaltung: null
     });
@@ -157,8 +189,8 @@ export default function Firmenprofil() {
 
     const handleEdit = (section: keyof EditingState, index: number, data: any) => {
         console.log('Editing section:', section, 'with data:', data);
-        setEditing(prev => ({ ...prev, [section]: index }));
-        setEditedData(prev => ({ ...prev, [section]: { ...data } }));
+        setEditing((prev: EditingState) => ({ ...prev, [section]: index }));
+        setEditedData((prev: typeof editedData) => ({ ...prev, [section]: { ...data } }));
     };
 
     const handleSave = async (section: keyof EditingState, index: number) => {
@@ -182,10 +214,10 @@ export default function Firmenprofil() {
             
             const updatedUserData = { ...userData };
             updatedUserData[0].projects[index].firma = updatedFirma;
-            
+
             setUserData(updatedUserData);
-            setEditing(prev => ({ ...prev, [section]: null }));
-            setEditedData(prev => ({ ...prev, [section]: null }));
+            setEditing((prev: EditingState) => ({ ...prev, [section]: null }));
+            setEditedData((prev: Partial<SuccessMessages>) => ({ ...prev, [section]: null }));
 
             // Erfolgsmeldung setzen
             setSuccessMessages(prev => ({ 
@@ -211,8 +243,8 @@ export default function Firmenprofil() {
     };
 
     const handleCancel = (section: keyof EditingState) => {
-        setEditing(prev => ({ ...prev, [section]: null }));
-        setEditedData(prev => ({ ...prev, [section]: null }));
+        setEditing((prev: EditingState) => ({ ...prev, [section]: null }));
+        setEditedData((prev: Partial<SuccessMessages>) => ({ ...prev, [section]: null }));
     };
 
     if (error) {
@@ -248,21 +280,23 @@ export default function Firmenprofil() {
                         className="bg-gray-100 shadow-sm rounded-lg p-6 mt-8 border-l-4 border-blue-500"
                     >
                         <Subheading>Firmenübersicht {index + 1}</Subheading>
-                        {successMessages.firmenübersicht && (
+                        {successMessages.firmenuebersicht && (
                             <div className="my-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">
-                                {successMessages.firmenübersicht}
+                                {successMessages.firmenuebersicht}
                             </div>
                         )}
-                        <FirmenübersichtForm
+                        <FirmenuebersichtForm
                             data={editedData.firmenübersicht || firma}
-                            isEditing={editing.firmenübersicht === index}
-                            onEdit={() => handleEdit('firmenübersicht', index, firma)}
-                            onSave={() => handleSave('firmenübersicht', index)}
-                            onCancel={() => handleCancel('firmenübersicht')}
-                            onChange={(data) => setEditedData(prev => ({ 
-                                ...prev, 
-                                firmenübersicht: data 
-                            }))}
+                            isEditing={editing.firmenuebersicht === index}
+                            onEdit={() => handleEdit('firmenuebersicht', index, firma)}
+                            onSave={() => handleSave('firmenuebersicht', index)}
+                            onCancel={() => handleCancel('firmenuebersicht')}
+                            onChange={(data) =>
+                                setEditedData((prev: Partial<SuccessMessages>) => ({
+                                    ...prev,
+                                    firmenübersicht: data
+                                }))
+                            }
                         />
 
                         <Subheading className="mt-6">Technischer Ansprechpartner</Subheading>
@@ -274,13 +308,21 @@ export default function Firmenprofil() {
                         <TechnischerAnsprechpartnerForm
                             data={editedData.technischerAnsprechpartner || firma.TechnischerAnsprechpartner || {}}
                             isEditing={editing.technischerAnsprechpartner === index}
-                            onEdit={() => handleEdit('technischerAnsprechpartner', index, firma.TechnischerAnsprechpartner || {})}
+                            onEdit={() =>
+                                handleEdit(
+                                    'technischerAnsprechpartner',
+                                    index,
+                                    firma.TechnischerAnsprechpartner || {}
+                                )
+                            }
                             onSave={() => handleSave('technischerAnsprechpartner', index)}
                             onCancel={() => handleCancel('technischerAnsprechpartner')}
-                            onChange={(data) => setEditedData(prev => ({ 
-                                ...prev, 
-                                technischerAnsprechpartner: data 
-                            }))}
+                            onChange={(data) =>
+                                setEditedData((prev: Partial<SuccessMessages>) => ({
+                                    ...prev,
+                                    technischerAnsprechpartner: data,
+                                }))
+                            }
                         />
 
                         <Subheading className="mt-6">Buchhaltungsdetails</Subheading>
@@ -295,10 +337,12 @@ export default function Firmenprofil() {
                             onEdit={() => handleEdit('buchhaltung', index, firma.buchhaltung || {})}
                             onSave={() => handleSave('buchhaltung', index)}
                             onCancel={() => handleCancel('buchhaltung')}
-                            onChange={(data) => setEditedData(prev => ({ 
-                                ...prev, 
-                                buchhaltung: data 
-                            }))}
+                            onChange={(data) =>
+                                setEditedData((prev: Partial<SuccessMessages>) => ({
+                                    ...prev,
+                                    buchhaltung: data
+                                }))
+                            }
                         />
                     </div>
                 );
